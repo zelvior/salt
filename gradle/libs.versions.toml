@@ -8,7 +8,7 @@ lifecycle                   = "2.8.4"
 activityCompose             = "1.9.2"
 navigationCompose           = "2.7.7"
 coroutines                  = "1.8.1"
-kotlinxSerialization        = "1.7.3"
+kotlinxSerialization        = "1.6.3"
 ktor                        = "2.3.12"
 shizuku                     = "13.1.5"
 junit                       = "4.13.2"
@@ -48,6 +48,7 @@ ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serializatio
 
 # --- Shizuku (optional root-free system bridge — used in Phase 2) ---
 shizuku-api      = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
+shizuku-aidl     = { group = "dev.rikka.shizuku", name = "aidl", version.ref = "shizuku" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 
 # --- Tests ---
