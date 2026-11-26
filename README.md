@@ -91,8 +91,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 > **Permissions:** On first launch, Salt routes you to the onboarding checklist to grant
-> *Display over other apps*, *Notification access*, *Modify system settings*, and
-> *Bluetooth*. After that, pull the invisible top-edge strip downward to open the shade.
+> *Display over other apps*, *Notification access*, *Modify system settings*,
+> *Do Not Disturb access* (for the DND toggle), and *Bluetooth*. After that, pull the
+> invisible top-edge strip downward to open the shade.
 
 ---
 

@@ -40,6 +40,11 @@ object Permissions {
             true
         }
 
+    /** "Do Not Disturb access" — required by NotificationManager.setInterruptionFilter. */
+    fun hasDndAccess(context: Context): Boolean =
+        (context.getSystemService(android.app.NotificationManager::class.java))
+            ?.isNotificationPolicyAccessGranted ?: false
+
     /** True if the Shizuku manager app is installed (the bridge is activated from there). */
     fun hasShizuku(context: Context): Boolean =
         runCatching { context.packageManager.getPackageInfo("moe.shizuku.privileged.api", 0) }
@@ -53,6 +58,10 @@ object Permissions {
 
     fun notificationListenerIntent(): Intent =
         Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+
+    fun dndAccessIntent(context: Context): Intent =
+        Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+            .apply { putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName) }
 
     fun appDetailsIntent(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))

@@ -106,6 +106,9 @@ private fun MainScreen() {
             "Modify system settings",
             Permissions.hasWriteSettings(context)
         ) { context.startActivity(Permissions.writeSettingsIntent(context)) }
+        PermissionRow("Do Not Disturb access", Permissions.hasDndAccess(context)) {
+            context.startActivity(Permissions.dndAccessIntent(context))
+        }
         PermissionRow("Bluetooth", Permissions.hasBluetoothConnect(context)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
                 !Permissions.hasBluetoothConnect(context)
