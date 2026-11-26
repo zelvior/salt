@@ -123,6 +123,29 @@ so idle cost stays near zero — consistent with Salt's low-idle-RAM goal.
 
 ---
 
+## Phase 3 — Media Controls & Notification Shade
+
+- **`core/media/MediaControllerManager`** — platform `MediaSessionManager` +
+  `OnActiveSessionsChangedListener` (no polling). Exposes `StateFlow<MediaState?>`
+  (title, artist, scaled album art, playing state, package) and `playPause()`,
+  `skipToNext()`, `skipToPrevious()` transport actions. Works because Salt ships an
+  enabled NotificationListenerService; hides gracefully otherwise.
+- **`core/notifications/SaltNotificationListener`** — real `NotificationListenerService`:
+  filters ongoing/group-summary/low-importance noise, then pushes into
+  **`NotificationRepository`**, which redacts title/text through `NotificationSanitizer`
+  *before* anything enters the exposed `StateFlow<List<CleanNotification>>`
+  (privacy gate: OTPs / emails / phone numbers never reach UI or AI). Feed capped at 20.
+  `dismissNotification(key)` / `clearAllNotifications()` delegate to the service.
+- **Shade UI** — glass media card (art + title/artist + prev/play/next) and a swipe-to-dismiss
+  notification feed with "Clear all", both hidden when there's nothing to show.
+- **Gesture fix** — the overlay is now TWO windows: a dedicated top-edge strip window
+  (`LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS`, status-bar height + margin) that intercepts the
+  pull-down *before* the system shade, plus a NOT_TOUCH_MODAL panel window (bottom of the
+  screen and gesture nav stay usable; panel is NOT_TOUCHABLE while closed). API 31+
+  windows also get real backdrop blur (`blurBehindRadius`).
+
+---
+
 ## Notes
 
 - **Glassmorphism:** uses the platform `RenderEffect` blur (`Modifier.blur`) on Android 12+
