@@ -9,9 +9,9 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewTreeLifecycleOwner
-import androidx.compose.ui.platform.ViewTreeSavedStateRegistryOwner
-import androidx.compose.ui.platform.ViewTreeViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlin.math.roundToInt
 
 /**
@@ -88,9 +88,9 @@ class OverlayWindowHost(
         val compose = ComposeView(context).apply {
             // Bind the overlay's lifecycle / VM / SavedState owners so Compose works as if
             // hosted by an Activity.
-            ViewTreeLifecycleOwner.set(this, lifecycleOwner)
-            ViewTreeViewModelStoreOwner.set(this, lifecycleOwner)
-            ViewTreeSavedStateRegistryOwner.set(this, lifecycleOwner)
+            setViewTreeLifecycleOwner(lifecycleOwner)
+            setViewTreeViewModelStoreOwner(lifecycleOwner)
+            setViewTreeSavedStateRegistryOwner(lifecycleOwner)
             setContent { content() }
         }
         panelContainer.addView(

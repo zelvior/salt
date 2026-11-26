@@ -98,6 +98,7 @@ dependencies {
 
     // Shizuku bridge (Phase 2 — optional root-free system toggles)
     implementation(libs.shizuku.api)
+    implementation(libs.shizuku.aidl)
     implementation(libs.shizuku.provider)
 
     // Tests

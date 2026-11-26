@@ -2,11 +2,13 @@ package com.zelvior.salt.core.system
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.ParcelFileDescriptor
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import moe.shizuku.server.IShizukuService
 import rikka.shizuku.Shizuku
 
 /**
@@ -18,8 +20,9 @@ import rikka.shizuku.Shizuku
  *  - run adb-shell-equivalent commands with Shizuku's privileges ([runShell]),
  *    used for Wi-Fi / mobile data / airplane mode which the normal SDK cannot toggle.
  *
- * The Shizuku permission listener is registered once (in [init]); call [destroy] when the
- * owning component is gone.
+ * Shell execution goes through the public [IShizukuService] AIDL interface — the higher-level
+ * `Shizuku.newProcess` helper is package-private/deprecated. Call [destroy] when the owning
+ * component is gone.
  */
 class ShizukuBridge(private val context: Context) {
 
@@ -61,16 +64,29 @@ class ShizukuBridge(private val context: Context) {
     /** Run a shell command with Shizuku privileges. Returns stdout or the failure. */
     suspend fun runShell(command: String): Result<String> = withContext(Dispatchers.IO) {
         runCatching {
-            val process = Shizuku.newProcess(arrayOf("sh", "-c", command), null, null)
-            coroutineScope {
-                // Drain stderr concurrently so a chatty command can't fill its pipe
-                // buffer and deadlock the stdout read below.
-                val err = async { process.errorStream.bufferedReader().use { it.readText() } }
-                val out = process.inputStream.bufferedReader().use { it.readText() }
-                val code = process.waitFor()
-                val errText = err.await()
-                if (code != 0) error("sh exited $code: $errText")
-                out
+            val binder = Shizuku.getBinder()
+            checkNotNull(binder) { "Shizuku binder unavailable" }
+            val service = checkNotNull(IShizukuService.Stub.asInterface(binder)) {
+                "Shizuku service unavailable"
+            }
+            val remote = service.newProcess(arrayOf("sh", "-c", command), null, null)
+            try {
+                coroutineScope {
+                    // Drain stderr concurrently so a chatty command can't fill its pipe
+                    // buffer and deadlock the stdout read below.
+                    val err = async {
+                        ParcelFileDescriptor.AutoCloseInputStream(remote.errorStream)
+                            .bufferedReader().use { it.readText() }
+                    }
+                    val out = ParcelFileDescriptor.AutoCloseInputStream(remote.inputStream)
+                        .bufferedReader().use { it.readText() }
+                    val code = remote.waitFor()
+                    val errText = err.await()
+                    if (code != 0) error("sh exited $code: $errText")
+                    out
+                }
+            } finally {
+                runCatching { remote.destroy() }
             }
         }
     }

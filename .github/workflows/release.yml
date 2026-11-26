@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
@@ -92,13 +92,15 @@ jobs:
           echo "Resolved version: ${VER} (tag v${VER})"
 
       # For manual runs there is no pushed tag yet — create one so the release is addressable.
+      # Force-move (-f) so re-running with the same version republishes cleanly instead of
+      # failing on an existing tag.
       - name: Create tag for manual run
         if: github.event_name == 'workflow_dispatch'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag "${{ steps.version.outputs.tag }}"
-          git push origin "${{ steps.version.outputs.tag }}"
+          git tag -f "${{ steps.version.outputs.tag }}"
+          git push -f origin "${{ steps.version.outputs.tag }}"
 
       - name: Assemble APK
         run: |
