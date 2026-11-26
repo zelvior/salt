@@ -1,0 +1,128 @@
+# Salt — Build & Publish Unsigned/Debug-Signed Testing APK
+#
+# Triggers:
+#   * Pushing a version tag  ->  refs/tags/v*   (e.g. v0.1.0)
+#   * Manual run via workflow_dispatch (optional `version` + `build_type`)
+#
+# Produces a directly installable APK WITHOUT requiring any GitHub Secrets:
+#   - debug builds are signed by the auto-generated debug keystore (installable everywhere)
+#   - release builds fall back to the debug signing config (see app/build.gradle.kts)
+# The APK is renamed to Salt-<version>-unsigned.apk and attached to a GitHub Release
+# with auto-generated release notes.
+
+name: Build & Release (Testing APK)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g. 0.1.0). Only used for manual runs.'
+        required: false
+        default: ''
+      build_type:
+        description: 'Gradle build variant to assemble.'
+        required: false
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+# Needed by softprops/action-gh-release to create the release.
+permissions:
+  contents: write
+
+env:
+  JAVA_VERSION: '17'
+  GRADLE_VERSION: '8.9'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Assemble & Publish APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # Installs the requested Gradle version and adds `gradle` to PATH, so we can
+      # (re)generate the wrapper below even though the wrapper jar is not committed.
+      - name: Set up Gradle ${{ env.GRADLE_VERSION }}
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ env.GRADLE_VERSION }}
+
+      # The gradle-wrapper.jar is intentionally NOT committed (binary, generated).
+      # CI regenerates it so `./gradlew` works exactly as requested.
+      - name: Ensure Gradle wrapper exists
+        run: |
+          if [ ! -f gradlew ]; then
+            gradle wrapper --gradle-version ${{ env.GRADLE_VERSION }}
+            chmod +x gradlew
+          fi
+
+      - name: Resolve version & tag
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VER="${{ github.event.inputs.version }}"
+          elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VER="${GITHUB_REF_NAME#v}"
+          else
+            VER="0.0.0-${GITHUB_SHA::7}"
+          fi
+          # Normalize: strip a leading 'v' if present.
+          VER="${VER#v}"
+          echo "version=${VER}"        >> "$GITHUB_OUTPUT"
+          echo "tag=v${VER}"           >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${VER} (tag v${VER})"
+
+      # For manual runs there is no pushed tag yet — create one so the release is addressable.
+      - name: Create tag for manual run
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
+
+      - name: Assemble APK
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          ./gradlew "assemble${BUILD_TYPE^}" --no-daemon --build-cache
+
+      - name: Locate & rename APK
+        id: apk
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
+          SRC=$(find app/build/outputs/apk/"${BUILD_TYPE}" -name '*.apk' | head -n 1)
+          DST="Salt-${{ steps.version.outputs.version }}-unsigned.apk"
+          cp "${SRC}" "${DST}"
+          echo "apk_path=${DST}" >> "$GITHUB_OUTPUT"
+          echo "Built ${SRC} -> ${DST}"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Salt ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: ${{ steps.apk.outputs.apk_path }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
