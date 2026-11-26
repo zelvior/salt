@@ -130,3 +130,33 @@ so idle cost stays near zero — consistent with Salt's low-idle-RAM goal.
 - **Privacy:** the `NotificationSanitizer` (regex/blacklist) is implemented now and is meant
   to run *before* any text reaches the AI layer.
 - **Shizuku:** declared as an optional dependency + manifest provider; wired in Phase 2.
+
+---
+
+## Branding & Launcher Icon Pipeline
+
+The logo lives once, at **`art/salt-logo.png`** (1024-class full-bleed square: a glowing
+glass salt-crystal cube on charcoal — emblem centered inside the adaptive-icon safe zone).
+Everything else is *derived* from that master by a deterministic script:
+
+```bash
+python3 art/generate_launcher_icons.py   # requires Pillow
+```
+
+This regenerates:
+
+- **Adaptive icon layers** (`mipmap-*/ic_launcher_foreground.webp` at the 66% safe zone,
+  `ic_launcher_monochrome.webp` for Android 13+ themed icons) over the flat brand
+  charcoal `#0B0E14` (`drawable/ic_launcher_background.xml`).
+- **Legacy statics** (`ic_launcher.webp` rounded-square, `ic_launcher_round.webp` circle)
+  composed as background + emblem so old launchers match the adaptive look.
+- **In-app brand mark** (`drawable-nodpi/salt_logo.webp`) used in the shade header,
+  the launcher activity header, and onboarding.
+- **Store art** (`art/salt-emblem.png` transparent emblem, `art/playstore-icon.png`).
+- **`art/preview-sheet.png`** — squircle / circle / rounded / legacy / themed previews.
+
+**Rules:** the master is the only hand-made image; never edit derived files by hand
+(re-run the script). The emblem is extracted cube-only (the floor reflection is cut at
+its alpha-width minimum and the bottom edge feathered), so future master updates keep
+the exact same launcher shape — you can turn this into a full launcher icon set without
+touching the artwork.

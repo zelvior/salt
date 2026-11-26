@@ -7,20 +7,27 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.zelvior.salt.R
 import com.zelvior.salt.core.overlay.OverlayService
 import com.zelvior.salt.core.permissions.Permissions
 import com.zelvior.salt.ui.components.PermissionRow
@@ -52,7 +59,15 @@ private fun OnboardingScreen(onFinish: () -> Unit) {
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Welcome to Salt", style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painter = painterResource(R.drawable.salt_logo),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(Modifier.width(12.dp))
+            Text("Welcome to Salt", style = MaterialTheme.typography.headlineMedium)
+        }
         Text(
             "Grant the permissions below to enable the control center.",
             style = MaterialTheme.typography.bodyMedium
