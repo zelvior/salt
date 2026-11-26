@@ -1,5 +1,6 @@
 package com.zelvior.salt.core.overlay
 
+import android.content.Context
 import android.graphics.PixelFormat
 import android.os.Build
 import android.view.Gravity

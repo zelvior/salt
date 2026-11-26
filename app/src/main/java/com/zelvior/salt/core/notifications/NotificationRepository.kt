@@ -99,7 +99,8 @@ class NotificationRepository(private val sanitizer: NotificationSanitizer) {
             packageName = raw.packageName,
             appLabel = raw.appLabel,
             title = sanitizer.sanitize(raw.title).trim(),
-            text = sanitizer.sanitize(raw.text).trim()
+            text = sanitizer.sanitize(raw.text).trim(),
+            timestamp = raw.timestamp
         ).takeIf { it.title.isNotBlank() || it.text.isNotBlank() }
     }
 
