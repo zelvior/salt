@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,8 +46,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.zelvior.salt.R
 import com.zelvior.salt.core.overlay.OverlayInteractor
 import com.zelvior.salt.core.system.SystemController
 import com.zelvior.salt.core.system.ToggleKey
@@ -140,6 +143,12 @@ private fun GlassPanel(
                 .padding(16.dp)
         ) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.salt_logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(26.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text("Salt", style = MaterialTheme.typography.titleMedium, color = SaltTextPrimary)
                 Spacer(Modifier.width(8.dp))
                 Text(
