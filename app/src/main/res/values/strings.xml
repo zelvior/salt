@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Salt</string>
+    <string name="overlay_channel_name">Salt Overlay</string>
+    <string name="overlay_channel_description">Keeps the Salt control-center overlay alive.</string>
+    <string name="overlay_notification_text">Control center is active. Tap to open, or stop it from the app.</string>
+    <string name="action_stop">Stop</string>
+    <string name="notification_listener_label">Salt Notification Listener</string>
+</resources>
