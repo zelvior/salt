@@ -91,8 +91,34 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 > **Permissions:** On first launch, Salt routes you to the onboarding checklist to grant
-> *Display over other apps*, *Notification access*, and *Modify system settings*. After that,
-> pull the invisible top-edge strip downward to open the shade.
+> *Display over other apps*, *Notification access*, *Modify system settings*, and
+> *Bluetooth*. After that, pull the invisible top-edge strip downward to open the shade.
+
+---
+
+## Phase 2 — System Toggles & Shizuku
+
+The shade is now live: brightness and media-volume sliders plus a 2×3 toggle grid
+(Wi-Fi, Bluetooth, mobile data, airplane mode, DND, flashlight), all reflecting and
+driving real device state.
+
+- **`core/system/SystemController`** — the single surface the UI talks to
+  (`states`, `brightness`, `volume` flows; `toggle/setBrightness/setVolume/connectShizuku`).
+- **`core/system/SystemControllerImpl`** — standard SDK where possible:
+  `Settings.System` for brightness, `AudioManager` for media volume,
+  `NotificationManager.setInterruptionFilter` for DND, `CameraManager.setTorchMode`
+  for the flashlight, `BluetoothAdapter` for BT (with Shizuku `svc bluetooth` preferred
+  on Android 13+, which blocks `enable()` for normal apps).
+- **`core/system/ShizukuBridge`** — root-free shell execution for the restricted toggles:
+  `svc wifi/data enable|disable`, `settings put global airplane_mode_on` + broadcast.
+  Bluetooth also routes through Shizuku when available. Permission is requested once and
+  awaited via `OnRequestPermissionResultListener`.
+- **Gating:** if Shizuku isn't installed/authorized, the Wi-Fi / data / airplane chips
+  dim and the panel shows a one-tap *Connect* banner that launches Shizuku's permission
+  flow (or its Play Store page if missing).
+
+State observation is passive (ContentObservers + broadcast receivers + torch callback),
+so idle cost stays near zero — consistent with Salt's low-idle-RAM goal.
 
 ---
 

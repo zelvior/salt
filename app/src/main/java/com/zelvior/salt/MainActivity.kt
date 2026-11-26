@@ -66,6 +66,10 @@ private fun MainScreen() {
         ActivityResultContracts.RequestPermission()
     ) { /* result handled by system settings; we re-check on resume */ }
 
+    val btLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* BLUETOOTH_CONNECT; re-checked by the row state */ }
+
     // Best-effort: ask for notification permission so the overlay/AI can surface info.
     androidx.compose.runtime.LaunchedEffect(Unit) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -102,6 +106,15 @@ private fun MainScreen() {
             "Modify system settings",
             Permissions.hasWriteSettings(context)
         ) { context.startActivity(Permissions.writeSettingsIntent(context)) }
+        PermissionRow("Bluetooth", Permissions.hasBluetoothConnect(context)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !Permissions.hasBluetoothConnect(context)
+            ) {
+                btLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+            } else {
+                context.startActivity(Permissions.appDetailsIntent(context))
+            }
+        }
 
         Spacer(Modifier.weight(1f))
 

@@ -1,23 +1,50 @@
 package com.zelvior.salt.core.system
 
+import kotlinx.coroutines.flow.StateFlow
+
+/** Binary switches exposed by the control center. */
+enum class ToggleKey {
+    WIFI, BLUETOOTH, MOBILE_DATA, AIRPLANE_MODE, DO_NOT_DISTURB, FLASHLIGHT
+}
+
 /**
- * Phase 2 (System Toggles & Shizuku) — interface scaffold.
+ * Unified hardware-control surface for the shade.
  *
- * Implementations will wrap standard Android APIs (brightness, media volume, DND,
- * flashlight) and, optionally, the Shizuku bridge for restricted states
- * (Wi-Fi, mobile data, Bluetooth, airplane mode) without root.
+ * Brightness / media volume are continuous (0..100). The binary toggles are reflected in
+ * [states]. Wi-Fi / mobile data / airplane mode require the optional Shizuku bridge
+ * (standard SDK cannot toggle them without root); [shizukuReady] gates those.
  */
 interface SystemController {
-    // data class ToggleState(val key: String, val enabled: Boolean, val available: Boolean)
+    /** Currently-enabled binary toggles. */
+    val states: StateFlow<Set<ToggleKey>>
 
-    // suspend fun setBrightness(percent: Int)
-    // suspend fun setMediaVolume(percent: Int)
-    // suspend fun setDoNotDisturb(enabled: Boolean)
-    // suspend fun setFlashlight(enabled: Boolean)
+    /** Screen brightness, 0..100 (percent). */
+    val brightness: StateFlow<Int>
 
-    // -- Shizuku-backed (optional, root-free) --
-    // suspend fun toggleWifi(enabled: Boolean)
-    // suspend fun toggleBluetooth(enabled: Boolean)
-    // suspend fun toggleMobileData(enabled: Boolean)
-    // suspend fun toggleAirplaneMode(enabled: Boolean)
+    /** Media volume, 0..100 (percent). */
+    val volume: StateFlow<Int>
+
+    /** Shizuku bridge bound + authorized (needed for Wi-Fi / data / airplane). */
+    val shizukuReady: StateFlow<Boolean>
+
+    /** Shizuku manager app installed on device. */
+    val shizukuInstalled: StateFlow<Boolean>
+
+    /** Toggle a binary switch (suspends while the action completes). */
+    suspend fun toggle(key: ToggleKey)
+
+    /** Set screen brightness (0..100). Requires WRITE_SETTINGS. */
+    suspend fun setBrightness(percent: Int)
+
+    /** Set media volume (0..100). */
+    suspend fun setVolume(percent: Int)
+
+    /** Authorize Shizuku (or open its store page if missing); returns true once ready. */
+    suspend fun connectShizuku(): Boolean
+
+    /** Begin observing system state. Call when the overlay becomes visible. */
+    fun start()
+
+    /** Stop observing and release listeners. */
+    fun stop()
 }

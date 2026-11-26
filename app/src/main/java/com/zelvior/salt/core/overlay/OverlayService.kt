@@ -12,6 +12,8 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.zelvior.salt.MainActivity
 import com.zelvior.salt.R
+import com.zelvior.salt.SaltApplication
+import com.zelvior.salt.core.system.SystemController
 import com.zelvior.salt.ui.shade.ControlCenterScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +49,7 @@ class OverlayService : Service(), OverlayInteractor {
 
     private var lifecycleOwner: OverlayLifecycleOwner? = null
     private var host: OverlayWindowHost? = null
+    private var controller: SystemController? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -69,15 +72,21 @@ class OverlayService : Service(), OverlayInteractor {
         if (host != null) return
         val owner = OverlayLifecycleOwner().also { it.onCreate() }
         lifecycleOwner = owner
+        controller = (applicationContext as SaltApplication).container.systemController
         host = OverlayWindowHost(
             context = this,
             lifecycleOwner = owner,
             interactor = this
         ) {
-            ControlCenterScreen(interactor = this, onClose = ::close)
+            ControlCenterScreen(
+                interactor = this,
+                controller = controller!!,
+                onClose = ::close
+            )
         }.also {
             it.show()
             owner.onResume()
+            controller?.start()
         }
     }
 
@@ -86,6 +95,8 @@ class OverlayService : Service(), OverlayInteractor {
     override fun toggle() { _isOpen.value = !_isOpen.value }
 
     override fun onDestroy() {
+        controller?.stop()
+        controller = null
         host?.hide()
         host = null
         lifecycleOwner?.onDestroy()

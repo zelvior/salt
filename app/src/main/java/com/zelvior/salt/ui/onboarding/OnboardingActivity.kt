@@ -1,8 +1,12 @@
 package com.zelvior.salt.ui.onboarding
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +43,9 @@ class OnboardingActivity : ComponentActivity() {
 @Composable
 private fun OnboardingScreen(onFinish: () -> Unit) {
     val context = LocalContext.current
+    val btLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* BLUETOOTH_CONNECT; row state re-checks */ }
     Column(
         Modifier
             .fillMaxSize()
@@ -60,6 +67,15 @@ private fun OnboardingScreen(onFinish: () -> Unit) {
         }
         PermissionRow("Modify system settings", Permissions.hasWriteSettings(context)) {
             context.startActivity(Permissions.writeSettingsIntent(context))
+        }
+        PermissionRow("Bluetooth", Permissions.hasBluetoothConnect(context)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !Permissions.hasBluetoothConnect(context)
+            ) {
+                btLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+            } else {
+                context.startActivity(Permissions.appDetailsIntent(context))
+            }
         }
 
         Spacer(Modifier.weight(1f))

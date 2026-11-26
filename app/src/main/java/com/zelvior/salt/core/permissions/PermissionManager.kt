@@ -31,6 +31,15 @@ object Permissions {
         NotificationManagerCompat.getEnabledListenerPackages(context)
             .contains(context.packageName)
 
+    /** Runtime BLUETOOTH_CONNECT (API 31+); always true below that. */
+    fun hasBluetoothConnect(context: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+
     /** True if the Shizuku manager app is installed (the bridge is activated from there). */
     fun hasShizuku(context: Context): Boolean =
         runCatching { context.packageManager.getPackageInfo("moe.shizuku.privileged.api", 0) }
