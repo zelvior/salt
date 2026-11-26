@@ -6,14 +6,18 @@ import android.view.MotionEvent
 import kotlin.math.roundToInt
 
 /**
- * Detects a downward swipe on the (invisible) top-edge trigger strip to open the shade,
- * and an upward swipe to close it. Each gesture fires at most one callback (debounced via
- * [fired]); callbacks run on the looper thread the detector was created on.
+ * Detects gestures on the invisible top-edge trigger strip:
+ *  - swipe DOWN  -> [onOpen]
+ *  - swipe UP    -> [onClose]
+ *  - single tap  -> [onToggle]
+ * Each gesture fires at most one callback (debounced via [fired]); callbacks run on the
+ * looper thread the detector was created on.
  */
 class EdgeGestureDetector(
     context: Context,
     private val onOpen: () -> Unit,
-    private val onClose: () -> Unit = {}
+    private val onClose: () -> Unit = {},
+    private val onToggle: () -> Unit = {}
 ) {
     private val thresholdPx =
         (OPEN_THRESHOLD_DP * context.resources.displayMetrics.density).roundToInt()
@@ -24,6 +28,14 @@ class EdgeGestureDetector(
         object : GestureDetector.SimpleOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean {
                 fired = false
+                return true
+            }
+
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (!fired) {
+                    fired = true
+                    onToggle()
+                }
                 return true
             }
 

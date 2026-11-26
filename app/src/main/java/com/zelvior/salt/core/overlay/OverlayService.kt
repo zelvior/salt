@@ -13,6 +13,8 @@ import androidx.core.app.NotificationCompat
 import com.zelvior.salt.MainActivity
 import com.zelvior.salt.R
 import com.zelvior.salt.SaltApplication
+import com.zelvior.salt.core.media.MediaControllerManager
+import com.zelvior.salt.core.notifications.NotificationRepository
 import com.zelvior.salt.core.system.SystemController
 import com.zelvior.salt.ui.shade.ControlCenterScreen
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +52,8 @@ class OverlayService : Service(), OverlayInteractor {
     private var lifecycleOwner: OverlayLifecycleOwner? = null
     private var host: OverlayWindowHost? = null
     private var controller: SystemController? = null
+    private var media: MediaControllerManager? = null
+    private var notifications: NotificationRepository? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -70,9 +74,12 @@ class OverlayService : Service(), OverlayInteractor {
 
     private fun ensureOverlay() {
         if (host != null) return
+        val container = (applicationContext as SaltApplication).container
         val owner = OverlayLifecycleOwner().also { it.onCreate() }
         lifecycleOwner = owner
-        controller = (applicationContext as SaltApplication).container.systemController
+        controller = container.systemController
+        media = container.mediaControllerManager
+        notifications = container.notificationRepository
         host = OverlayWindowHost(
             context = this,
             lifecycleOwner = owner,
@@ -81,22 +88,43 @@ class OverlayService : Service(), OverlayInteractor {
             ControlCenterScreen(
                 interactor = this,
                 controller = controller!!,
+                media = media!!,
+                notifications = notifications!!,
                 onClose = ::close
             )
         }.also {
             it.show()
             owner.onResume()
             controller?.start()
+            media?.start()
         }
     }
 
-    override fun open() { _isOpen.value = true }
-    override fun close() { _isOpen.value = false }
-    override fun toggle() { _isOpen.value = !_isOpen.value }
+    override fun open() {
+        _isOpen.value = true
+        host?.onShadeOpenChanged(true)
+        // Lazy retry: if notification-listener access was granted after the service
+        // started, the media observer picks it up the first time the shade opens.
+        media?.start()
+    }
+
+    override fun close() {
+        _isOpen.value = false
+        host?.onShadeOpenChanged(false)
+    }
+
+    override fun toggle() {
+        val next = !_isOpen.value
+        _isOpen.value = next
+        host?.onShadeOpenChanged(next)
+    }
 
     override fun onDestroy() {
         controller?.stop()
         controller = null
+        media?.stop()
+        media = null
+        notifications = null
         host?.hide()
         host = null
         lifecycleOwner?.onDestroy()

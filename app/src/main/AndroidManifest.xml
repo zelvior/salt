@@ -71,10 +71,10 @@
                 android:value="Salt custom control-center overlay &amp; quick-settings shade" />
         </service>
 
-        <!-- Notification listener (Phase 2 — intercept + sanitize before AI) -->
+        <!-- Notification listener (Phase 3 — feeds the shade + enables MediaSessionManager) -->
         <service
-            android:name=".core.notifications.SaltNotificationListenerService"
-            android:exported="false"
+            android:name=".core.notifications.SaltNotificationListener"
+            android:exported="true"
             android:label="@string/notification_listener_label"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
