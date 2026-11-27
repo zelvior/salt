@@ -63,14 +63,28 @@ The [release workflow](.github/workflows/release.yml) will:
 
 1. Set up JDK 17 and Gradle 8.9 (caches dependencies).
 2. Generate the Gradle wrapper (the wrapper jar is intentionally **not** committed).
-3. Run `./gradlew assembleDebug` (debug-signed → installable everywhere).
-4. Rename the APK to `Salt-<version>-unsigned.apk` and attach it to a GitHub Release
-   with auto-generated release notes.
+3. Run `./gradlew assembleDebug` (signed with the committed stable key → installable everywhere).
+4. Rename the APK to `Salt-<version>.apk` and attach it to a GitHub Release with
+   auto-generated release notes.
 
 You can also trigger it manually from **Actions → Build & Release** and pass a `version`
-and `build_type` (`debug` or `release`). The `release` variant falls back to the debug
-keystore so the artifact stays installable without storing secrets; add your own
-`signingConfigs` in `app/build.gradle.kts` before publishing to the Play Store.
+and `build_type` (`debug` or `release`). Both variants are signed with the committed
+`signing/salt-debug.keystore` (see `signing/README.md`) so **every new APK installs over
+the previous one** without uninstalling first. Swap in your own private upload key before
+publishing to the Play Store.
+
+### Installing the release APK
+
+Download `Salt-<version>.apk` from the Releases page and open it on the device
+(Android 10+). If the installer ever reports **"App not installed"**:
+
+1. Uninstall any previously installed *Salt* build once (a build signed with a different
+   key — e.g. an old CI run or a local Android Studio build — can never be updated by a
+   differently-signed APK), then install the new APK.
+2. Re-download the file if the size doesn't match the release page (truncated downloads
+   also produce this error).
+3. Make sure "Install unknown apps" is allowed for the browser/file manager you used, and
+   that Play Protect didn't silently block it.
 
 ### Local development
 

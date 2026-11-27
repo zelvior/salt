@@ -5,9 +5,10 @@
 #   * Manual run via workflow_dispatch (optional `version` + `build_type`)
 #
 # Produces a directly installable APK WITHOUT requiring any GitHub Secrets:
-#   - debug builds are signed by the auto-generated debug keystore (installable everywhere)
-#   - release builds fall back to the debug signing config (see app/build.gradle.kts)
-# The APK is renamed to Salt-<version>-unsigned.apk and attached to a GitHub Release
+#   - debug AND release builds are signed with the committed stable keystore
+#     (signing/salt-debug.keystore), so every APK can install over the previous one
+#   - see signing/README.md for key details
+# The APK is renamed to Salt-<version>.apk and attached to a GitHub Release
 # with auto-generated release notes.
 
 name: Build & Release (Testing APK)
@@ -112,7 +113,7 @@ jobs:
         run: |
           BUILD_TYPE="${{ github.event.inputs.build_type || 'debug' }}"
           SRC=$(find app/build/outputs/apk/"${BUILD_TYPE}" -name '*.apk' | head -n 1)
-          DST="Salt-${{ steps.version.outputs.version }}-unsigned.apk"
+          DST="Salt-${{ steps.version.outputs.version }}.apk"
           cp "${SRC}" "${DST}"
           echo "apk_path=${DST}" >> "$GITHUB_OUTPUT"
           echo "Built ${SRC} -> ${DST}"
