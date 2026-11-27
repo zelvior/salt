@@ -21,19 +21,34 @@ android {
         }
     }
 
+    signingConfigs {
+        // Stable, committed signing key so EVERY build (local + CI) is signed identically.
+        // This is what makes "install over the previous APK" work: Android rejects updates
+        // signed with a different key ("App not installed"). It is a self-signed,
+        // debug-grade key — NOT a Play Store upload key. Replace with your own private
+        // signing config before publishing.
+        create("salt") {
+            storeFile = rootProject.file("signing/salt-debug.keystore")
+            storeType = "PKCS12"
+            storePassword = "saltdebug"
+            keyAlias = "saltdebug"
+            keyPassword = "saltdebug"
+        }
+    }
+
     buildTypes {
         debug {
             isDebuggable = true
             applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("salt")
         }
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-            // No custom signingConfig: a release build would normally require a keystore.
-            // To keep CI secret-free AND produce an installable artifact, we sign the
-            // "release" variant with the auto-generated debug key. Replace this with your
-            // own signingConfigs (upload key) before publishing to the Play Store.
-            signingConfig = signingConfigs.getByName("debug")
+            // Signed with the same committed key as debug: CI stays secret-free AND the
+            // artifact installs / updates cleanly. Swap for your upload key before
+            // publishing to the Play Store.
+            signingConfig = signingConfigs.getByName("salt")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
